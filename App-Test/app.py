@@ -12,6 +12,17 @@ def index():
 def user(name):
     return render_template('user.html', name=name)
 
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
+
+@app.route('/event')
+def event():
+    return render_template('event.html')
 
 if __name__ == '__main__':
     app.run()

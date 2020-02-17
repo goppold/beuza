@@ -18,13 +18,9 @@
             <ul class="nav navbar-nav">
                 <li><a href="/">Home</a></li>
             </ul>
-        </div>
-        <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
                 <li><a href="/profile">Profile</a></li>
             </ul>
-        </div>
-        <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
                 <li><a href="/settings">Settings</a></li>
             </ul>
@@ -38,5 +34,20 @@
     <div class="page-header">
         <h1>Berlin</h1>
     </div>
+<div class="active">
+    Wen wählst du beim Hackedichtpokal?
+</div>
+    <div class="btn-group btn-group-toogle btn-block" data-toggle="buttons">
+        <label class="btn btn-primary btn-block">
+            <input type="radio" name="options" id="spritti_1" autocomplete="off"> KW
+        </label>
+        <label class="btn btn-primary btn-block">
+            <input type="radio" name="options" id="spritti_2" autocomplete="off"> WWF
+        </label>
+        <label class="btn btn-primary btn-block">
+            <input type="radio" name="options" id="spritti_3" autocomplete="off"> Lobin
+        </label>
+    </div>
+    <a type="button" class="btn btn-success" href="/"> Save </a>
 </div>
 {% endblock %}
