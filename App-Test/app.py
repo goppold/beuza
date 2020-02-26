@@ -25,4 +25,6 @@ def event():
     return render_template('event.html')
 
 if __name__ == '__main__':
-    app.run()
+    bootstrap = Bootstrap(app)
+    bootstrap.run()
+    #app.run()
