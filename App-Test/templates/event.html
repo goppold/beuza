@@ -1,34 +1,4 @@
 {%  extends "base.html" %}
-
-{% block title %} Hackedichtpokal {% endblock %}
-
-{% block navbar %}
-<div class="navbar navbar-inverse" role="navigation" >
-    <div class="container">
-        <div class = "navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toogle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/">Hackedichtpokal</a>
-        </div>
-        <div class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-                <li><a href="/">Home</a></li>
-            </ul>
-            <ul class="nav navbar-nav">
-                <li><a href="/profile">Profile</a></li>
-            </ul>
-            <ul class="nav navbar-nav">
-                <li><a href="/settings">Settings</a></li>
-            </ul>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
 {% block content %}
 <div class="container">
     <div class="page-header">
@@ -37,7 +7,7 @@
 <div class="active">
     Wen wählst du beim Hackedichtpokal?
 </div>
-    <div class="btn-group btn-group-toogle btn-block" data-toggle="buttons">
+    <div class="btn-group-vertical btn-group-toogle btn-block" data-toggle="buttons">
         <label class="btn btn-primary btn-block">
             <input type="radio" name="options" id="spritti_1" autocomplete="off"> KW 1.0
         </label>
@@ -48,6 +18,6 @@
             <input type="radio" name="options" id="spritti_3" autocomplete="off"> Lobin 3.0
         </label>
     </div>
-    <a type="button" class="btn btn-success" href="/"> Save</a>
+    <a type="button" class="btn btn-secondary" href="/"> Save</a>
 </div>
 {% endblock %}
