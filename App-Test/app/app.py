@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 from flask_datepicker import datepicker
 from sqlalchemy import create_engine
 
-from .db_communication import getEvents, getEventMembers, getEventNames, getMemberID, setVote, getCurrentCycleID, getUserID
+from .db_communication import getEvents, getEventMembers, getEventNames, getMemberID, setVote, getCurrentCycleID, getUserID, getCurrentCycleState, hasVoted
 from .forms import VoteForm
 
 """Tests for DB"""
@@ -45,6 +45,12 @@ def __setVote__():
     setVote(user_id, voter_user_id=vote, cycle_id=cycle_id, engine=engine)
     print('finish')
 
+def checkVote(user_id, cycle_id):
+    res = []
+    for i in user_id:
+        res.append(hasVoted(user_id=i, cycle_id=cycle_id, engine=engine))
+    return res
+
 @app.cli.command()
 def test():
     """Run the unit tests"""
@@ -60,6 +66,7 @@ def index():
     event_names = getEventNames(res, engine=engine)
 
     try:
+        # TODO evtl is hier onsubmit() besser
         __setVote__()
     except:
         print('pass')
@@ -81,11 +88,24 @@ def decisionUnclear():
 
 @app.route('/event/<event_id>', methods=['GET', 'POST'])
 def event(event_id):
+    cycle_id = getCurrentCycleID(engine, event_id)
+    state = getCurrentCycleState(engine, cycle_id)
     event_names = getEventNames(event_id, engine=engine)
-    user_id = getMemberID(event_id, engine=engine)
     event_user = getEventMembers(event_id, engine=engine)
-    return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
-                           user_id=user_id, amount_of_user=len(event_user))
+    user_id = getMemberID(event_id, engine=engine)
+
+    if state=='betting':
+        return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
+                               user_id=user_id, amount_of_user=len(event_user))
+    elif state=='closed': #Todo hier nur für tests closed eingegeben
+        checkVoteList = checkVote(cycle_id=cycle_id, user_id=user_id)
+        print(checkVoteList)
+        return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user), event_users=event_user, checkVoteList=checkVoteList)
+    elif state=='closed-':
+        print('todo')
+        return render_template('result.html')
+    else:
+        print('we got a problem')
 
 
 @app.route('/create-HP')

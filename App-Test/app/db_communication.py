@@ -32,6 +32,23 @@ def getCurrentCycleID(engine, event_id):
     connection.close()
     return res
 
+def hasVoted(engine, cycle_id, user_id):
+    with engine.connect() as connection:
+        result = connection.execute("select voted_user_id from votes where user_id=" + str(user_id) + "and cycle_id="+ str(cycle_id))
+        res = 0
+        for r in result:
+            res = 1
+    connection.close()
+    return res
+
+def getCurrentCycleState(engine, cycle_id):
+    with engine.connect() as connection:
+        result = connection.execute("select state from cycles where cycle_id=" + str(cycle_id))
+        for r in result:
+            res = r[0]
+    connection.close()
+    return res
+
 def setVote(user_id, voter_user_id, cycle_id, engine):
     with engine.connect() as connection:
         result = connection.execute("insert into votes (user_id, cycle_id, voted_user_id) values (" + str(user_id) + "," +str(cycle_id) +"," + str(voter_user_id) + ")")
