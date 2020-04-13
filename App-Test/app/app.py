@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 from flask_datepicker import datepicker
 from sqlalchemy import create_engine
 
-from .db_communication import getEvents, getEventMembers, getEventNames, getMemberID
+from .db_communication import getEvents, getEventMembers, getEventNames, getMemberID, setVote, getCurrentCycleID, getUserID
 from .forms import VoteForm
 
 """Tests for DB"""
@@ -37,6 +37,13 @@ def setDeviceID():
     global global_device_id
     global_device_id = str(2)
 
+def __setVote__():
+    vote = request.form['vote']
+    event_id = request.form['event_id']
+    cycle_id = getCurrentCycleID(engine, event_id)
+    user_id = getUserID(engine, global_device_id, event_id)
+    setVote(user_id, voter_user_id=vote, cycle_id=cycle_id, engine=engine)
+    print('finish')
 
 @app.cli.command()
 def test():
@@ -48,10 +55,15 @@ def test():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    print('INDEX')
     setDeviceID()
     res = getEvents(engine=engine, device_id=global_device_id)
     event_names = getEventNames(res, engine=engine)
+
+    try:
+        __setVote__()
+    except:
+        print('pass')
+        pass
 
     # TODO amount of events muss irgendwie noch umgangen werden. Kann nicht die Lösung sein
     return render_template('index.html', amount_of_events=len(event_names), event_names=event_names, event_IDs=res)
@@ -67,20 +79,12 @@ def decisionUnclear():
     return render_template('decision-unclear.html')
 
 
-@app.route('/event/<eventID>', methods=['GET', 'POST'])
-def event(eventID):
-    event_names = getEventNames(eventID, engine=engine)
-    user_id = getMemberID(eventID, engine=engine)
-    event_user = getEventMembers(eventID, engine=engine)
-    print('test2')
-    try:
-        option = request.form['vote']
-        print(option)
-        # TODO hier DB erneuern.
-    except:
-        pass
-
-    return render_template('event.html', event_name=event_names, event_id=eventID, event_users=event_user,
+@app.route('/event/<event_id>', methods=['GET', 'POST'])
+def event(event_id):
+    event_names = getEventNames(event_id, engine=engine)
+    user_id = getMemberID(event_id, engine=engine)
+    event_user = getEventMembers(event_id, engine=engine)
+    return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
                            user_id=user_id, amount_of_user=len(event_user))
 
 

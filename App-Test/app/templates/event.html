@@ -16,6 +16,7 @@
             <input type="radio" name="vote" id= "{{ user_id[i] }}" value= "{{ user_id[i] }}" autocomplete="off">  {{ event_users[i] }}
         </label>
         {% endfor %}
+<input type="hidden" name="event_id" value=" {{ event_id }} ">
     </div>
 <div style="text-align:center;">
     <a><input type="submit" class="btn btn-secondary" value="Next"></a>

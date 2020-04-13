@@ -2,6 +2,14 @@
 Methods for DB communication
 """
 
+def getUserID(engine,device_id, event_id):
+    with engine.connect() as connection:
+        result = connection.execute("select user_id from users where device_id=" + str(device_id) + "AND event_id = " + str(event_id))
+        for r in result:
+            res = r[0]
+    connection.close()
+    return res
+
 def getEvents(engine, device_id):
     res = []
     with engine.connect() as connection:
@@ -16,6 +24,19 @@ def getEvents(engine, device_id):
     connection.close()
     return res
 
+def getCurrentCycleID(engine, event_id):
+    with engine.connect() as connection:
+        result = connection.execute("select max(cycle_id) from cycles where event_id=" + str(event_id))
+        for r in result:
+            res = r[0]
+    connection.close()
+    return res
+
+def setVote(user_id, voter_user_id, cycle_id, engine):
+    with engine.connect() as connection:
+        result = connection.execute("insert into votes (user_id, cycle_id, voted_user_id) values (" + str(user_id) + "," +str(cycle_id) +"," + str(voter_user_id) + ")")
+        # TODO bekommt man hier eine bestätigung?
+    connection.close()
 
 def getEventMembers(eventID, engine):
     with engine.connect() as connection:

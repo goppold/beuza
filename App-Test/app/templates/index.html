@@ -4,7 +4,7 @@
     {% for i in range(amount_of_events) %}
     <div class="list-group">
 <div class="card border-info border-block mb-3">
-    <a href="{{  url_for('event', eventID=event_IDs[i], _external=True) }}" class="list-group-item-action flex-column align-items-start active">
+    <a href="{{  url_for('event', event_id=event_IDs[i], _external=True) }}" class="list-group-item-action flex-column align-items-start active">
   <div class="card-body">
       <h4> {{ event_names[i] }}</h4>
     <p class="card-text">Aktuelle oder bevorstehende Aktionen in blau</p>
