@@ -1,55 +1,48 @@
 from flask import Flask, render_template, session, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap
 import os
-from flask_sqlalchemy import SQLAlchemy
-
-from flask_wtf import FlaskForm
-from wtforms import RadioField, SubmitField, StringField
-from wtforms.validators import DataRequired
 
 from flask_datepicker import datepicker
-from sqlalchemy import create_engine
 
-from .db_communication import getEvents, getEventMembers, getEventNames, getMemberID, setVote, getCurrentCycleID, getUserID, getCurrentCycleState, hasVoted
-from .forms import VoteForm
-
-"""Tests for DB"""
-basedir = os.path.abspath(os.path.dirname(__file__))
+from .db_communication import getEvents, getEventUsersName, getEventNames, getEventUserID, setVote, getCurrentCycleID, \
+    getUserID, getCurrentCycleState, hasVoted, countVotes, checkCycle
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = \
-#    'sqlite:///' + os.path.join(basedir, 'data.sqlite')
-
-# app.config['SQLALCHEMY_DATABASE_URI'] = \
-#    'sql:///' + os.path.join(basedir, 'hp_app_db_1.sql')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# db = SQLAlchemy(app)
 
 app.config['SECRET_KEY'] = 'TEST'
 bootstrap = Bootstrap(app)
 
-engine = create_engine('postgresql://sebi:beuza@v220200284142109433.supersrv.de:5432/hpapp')
-
-
 def setDeviceID():
     # Only for Test
+    # Hier soll mal die Device_Id oder Email abgefragt werden
     global global_device_id
-    global_device_id = str(2)
+    global_device_id = str(1)
 
 def __setVote__():
+    """
+    Setzt Vote und checkt zugleich ob Cycle geändert werden muss
+    """
     vote = request.form['vote']
     event_id = request.form['event_id']
-    cycle_id = getCurrentCycleID(engine, event_id)
-    user_id = getUserID(engine, global_device_id, event_id)
-    setVote(user_id, voter_user_id=vote, cycle_id=cycle_id, engine=engine)
+    cycle_id = getCurrentCycleID(event_id)
+    user_id = getUserID(global_device_id, event_id)
+    setVote(user_id, voted_user_id=vote, cycle_id=cycle_id)
+
+    # Refresh Cycle if needed
+    checkCycle(cycle_id, user_id, event_id)
     print('finish')
 
+
 def checkVote(user_id, cycle_id):
+    """
+    Checkt für alles User (user_id) in einem Cycle (cycle_id) ob diese bereits gevotet haben
+    """
     res = []
     for i in user_id:
-        res.append(hasVoted(user_id=i, cycle_id=cycle_id, engine=engine))
+        res.append(hasVoted(user_id=i, cycle_id=cycle_id))
     return res
+
 
 @app.cli.command()
 def test():
@@ -62,8 +55,9 @@ def test():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     setDeviceID()
-    res = getEvents(engine=engine, device_id=global_device_id)
-    event_names = getEventNames(res, engine=engine)
+    res = getEvents(device_id=global_device_id)
+    event_names = getEventNames(res)
+
 
     try:
         # TODO evtl is hier onsubmit() besser
@@ -88,22 +82,34 @@ def decisionUnclear():
 
 @app.route('/event/<event_id>', methods=['GET', 'POST'])
 def event(event_id):
-    cycle_id = getCurrentCycleID(engine, event_id)
-    state = getCurrentCycleState(engine, cycle_id)
-    event_names = getEventNames(event_id, engine=engine)
-    event_user = getEventMembers(event_id, engine=engine)
-    user_id = getMemberID(event_id, engine=engine)
+    cycle_id = getCurrentCycleID(event_id)
+    state = getCurrentCycleState(cycle_id)
+    event_names = getEventNames(event_id)
+    event_user = getEventUsersName(event_id)
+    user_id = getEventUserID(event_id)
 
-    if state=='betting':
-        return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
-                               user_id=user_id, amount_of_user=len(event_user))
-    elif state=='closed': #Todo hier nur für tests closed eingegeben
+    if state == 'betting':
+        if hasVoted(user_id=getUserID(device_id=global_device_id, event_id=event_id), cycle_id=cycle_id,):
+            isclosed = 0
+            checkVoteList = checkVote(cycle_id=cycle_id, user_id=user_id)
+            return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user),
+                                   event_users=event_user, checkVoteList=checkVoteList, isclosed=isclosed)
+        else:
+            print('Hab noch nicht abgestimmt')
+            return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
+                                   user_id=user_id, amount_of_user=len(event_user))
+
+    elif state == 'voting':  # Todo hier nur für tests closed eingegeben -> voting
+        print('voting')
+        votes = countVotes(cycle_id=cycle_id, user_id=user_id)
+        return render_template('decision.html', amount_of_user=len(event_user), event_name=event_names,
+                               event_users=event_user, votes=votes)
+
+    elif state == 'closed':
+        isclosed = 1
         checkVoteList = checkVote(cycle_id=cycle_id, user_id=user_id)
-        print(checkVoteList)
-        return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user), event_users=event_user, checkVoteList=checkVoteList)
-    elif state=='closed-':
-        print('todo')
-        return render_template('result.html')
+        return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user),
+                               event_users=event_user, checkVoteList=checkVoteList, isclosed=isclosed)
     else:
         print('we got a problem')
 
@@ -137,4 +143,3 @@ if __name__ == '__main__':
     bootstrap = Bootstrap(app)
     bootstrap.run()
     datepicker(app)
-    # app.run()
