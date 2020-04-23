@@ -19,7 +19,7 @@
     {% for i in range(amount_of_user) %}
         <div class="container">
             <h5> {{ event_users[i] }}
-                {% if checkVoteList[i] == 1 %}
+                {% if checkVoteList[i] == 1 or isclosed==1 %}
                     <span class="badge badge-pill badge-success">Abgestimmt</span>
                 {% else %}
                     <span class="badge badge-pill badge-danger">Is noch zu besoffen</span>

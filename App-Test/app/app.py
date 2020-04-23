@@ -1,11 +1,12 @@
 from flask import Flask, render_template, session, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap
-import os
 
 from flask_datepicker import datepicker
 
+from sqlalchemy.types import DateTime
+
 from .db_communication import getEvents, getEventUsersName, getEventNames, getEventUserID, setVote, getCurrentCycleID, \
-    getUserID, getCurrentCycleState, hasVoted, countVotes, checkCycle
+    getUserID, getCurrentCycleState, hasVoted, countVotes, checkCycle, getVote
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -13,11 +14,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'TEST'
 bootstrap = Bootstrap(app)
 
+
 def setDeviceID():
     # Only for Test
     # Hier soll mal die Device_Id oder Email abgefragt werden
     global global_device_id
     global_device_id = str(1)
+
 
 def __setVote__():
     """
@@ -27,11 +30,26 @@ def __setVote__():
     event_id = request.form['event_id']
     cycle_id = getCurrentCycleID(event_id)
     user_id = getUserID(global_device_id, event_id)
-    setVote(user_id, voted_user_id=vote, cycle_id=cycle_id)
+    setVote(user_id=user_id, voted_user_id=vote, cycle_id=cycle_id)
 
     # Refresh Cycle if needed
-    checkCycle(cycle_id, user_id, event_id)
+    checkCycle(cycle_id=cycle_id, event_id=event_id)
     print('finish')
+
+
+def getOwnVote(votes, cycle_id, ownUser_id, user_id):
+    """
+    Returns 1 falls vote richtig
+    sonst 0
+    """
+    print(votes)
+    winning_id = getVote(cycle_id, ownUser_id)
+    res = 0
+
+    if user_id[votes.index(max(votes))] == winning_id:
+        res = 1
+
+    return res
 
 
 def checkVote(user_id, cycle_id):
@@ -57,7 +75,6 @@ def index():
     setDeviceID()
     res = getEvents(device_id=global_device_id)
     event_names = getEventNames(res)
-
 
     try:
         # TODO evtl is hier onsubmit() besser
@@ -89,9 +106,10 @@ def event(event_id):
     user_id = getEventUserID(event_id)
 
     if state == 'betting':
-        if hasVoted(user_id=getUserID(device_id=global_device_id, event_id=event_id), cycle_id=cycle_id,):
+        if hasVoted(user_id=getUserID(device_id=global_device_id, event_id=event_id), cycle_id=cycle_id, ):
             isclosed = 0
             checkVoteList = checkVote(cycle_id=cycle_id, user_id=user_id)
+            print(checkVoteList)
             return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user),
                                    event_users=event_user, checkVoteList=checkVoteList, isclosed=isclosed)
         else:
@@ -102,8 +120,10 @@ def event(event_id):
     elif state == 'voting':  # Todo hier nur für tests closed eingegeben -> voting
         print('voting')
         votes = countVotes(cycle_id=cycle_id, user_id=user_id)
+        # ownVote ist 1 falls richtig sonst 0
+        ownVote = getOwnVote(votes, cycle_id, getUserID(device_id=global_device_id, event_id=event_id), user_id)
         return render_template('decision.html', amount_of_user=len(event_user), event_name=event_names,
-                               event_users=event_user, votes=votes)
+                               event_users=event_user, votes=votes, ownVote=ownVote)
 
     elif state == 'closed':
         isclosed = 1

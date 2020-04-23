@@ -13,8 +13,18 @@
     {% endfor %}
 
     </div>
-    <div style="text-align:center;">
-    <!-- TODO Button Schlücke verteilen nur anzeigen wenn wirklich Schlücke verteilt werden-->
-    <a  type="button" class="btn btn-secondary" href="/give-slugs"> Schlücke verteilen</a>
-    </div>
+
+    {% if ownVote==1 %}
+        <div style="text-align:center;">
+        <!-- TODO Button Schlücke verteilen nur anzeigen wenn wirklich Schlücke verteilt werden-->
+        <a  type="button" class="btn btn-secondary" href="/give-slugs"> Schlücke verteilen</a>
+        </div>
+    {% else %}
+        <p> Du hast sauber daneben glangt. </p>
+        <div style="text-align:center;">
+        <!-- TODO Button Schlücke verteilen nur anzeigen wenn wirklich Schlücke verteilt werden-->
+        <a  type="button" class="btn btn-secondary" href="/"> Zruck</a>
+        </div>
+    {% endif %}
+
 {% endblock %}

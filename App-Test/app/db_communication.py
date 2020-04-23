@@ -2,8 +2,8 @@
 Methods for DB communication
 """
 
-import time
-from sqlalchemy import create_engine
+from datetime import datetime
+from sqlalchemy import create_engine, TIMESTAMP, MetaData, Column, String, Integer, DateTime, Table
 
 engine = create_engine('postgresql://sebi:beuza@v220200284142109433.supersrv.de:5432/hpapp')
 
@@ -52,6 +52,17 @@ def setVote(user_id, voted_user_id, cycle_id):
                 cycle_id) + "," + str(voted_user_id) + ")")
     connection.close()
 
+def getVote(cycle_id, user_id):
+    """
+    Gibt den eigenen Vote zurück
+    """
+    with engine.connect() as connection:
+        result = connection.execute(
+            "select voted_user_id from votes where user_id=" + str(user_id) + "and cycle_id=" + str(cycle_id))
+        for r in result:
+            res = r
+    connection.close()
+    return res
 
 """
 METHODS FOR USERS
@@ -87,14 +98,30 @@ def getEventUserID(event_ids):
     """
     Gibt UserIDs aus für ein oder mehrere Events
     """
-
+    print('getEventUserID')
     with engine.connect() as connection:
         res = []
         for e in event_ids:
-            result = connection.execute("select user_id from users where event_id=" + str(e))
+            try:
+                int(e)
+                result = connection.execute("select user_id from users where event_id=" + str(e))
+                for r in result:
+                    res.append(r['user_id'])
+            except ValueError:
+                print('Value Error')
 
-            for r in result:
-                res.append(r['user_id'])
+    connection.close()
+    return res
+
+def getEventUserID_request_form(event_ids):
+    """
+    Gibt UserIDs aus für ein oder mehrere Events
+    """
+    with engine.connect() as connection:
+        res = []
+        result = connection.execute("select user_id from users where event_id=" + str(event_ids))
+        for r in result:
+            res.append(r['user_id'])
 
     connection.close()
     return res
@@ -162,11 +189,21 @@ def checkCycle(cycle_id, event_id):
 
     Aktuell wird nur von betting auf closed umgestellt.
     """
-    user_IDs = getEventUserID(event_id, engine)
-    votes = countVotes(engine, cycle_id, user_IDs)
-    currentCycleState = getCurrentCycleState(engine, cycle_id)
-    if currentCycleState == "betting" and votes == len(user_IDs):
+    user_IDs = getEventUserID_request_form(event_ids=event_id)
+    votes = countVotes(cycle_id=cycle_id, user_id=user_IDs)
+    currentCycleState = getCurrentCycleState(cycle_id=cycle_id)
+    if currentCycleState == "betting" and sum(votes) == len(user_IDs):
+        # Berechnet maximalen Zyklus
         with engine.connect() as connection:
-            connection.execute("insert into cycles (cycle_id, state, end_date_time, event_id) values (" + str(
-                cycle_id + 1) + "," + "closed" + "," + str(time.time()) + "," + str(event_id) + ")")
+            result = connection.execute("select max(cycle_id) from cycles")
+            for r in result:
+                max_cycle_id = r[0]
         connection.close()
+
+        # Erhöht Zyklus
+        meta = MetaData(engine)
+        table = Table('cycles', meta, Column('cycle_id', Integer, primary_key=True), Column('state', String), Column('end_date_time', DateTime), Column('event_id', Integer))
+        meta.create_all()
+        ins = table.insert().values(cycle_id=max_cycle_id+1, state='closed',end_date_time=datetime.utcnow(), event_id=event_id)
+        conn = engine.connect()
+        conn.execute(ins)
