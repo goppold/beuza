@@ -2,7 +2,7 @@
 Methods for DB communication
 """
 
-from datetime import datetime
+from datetime import datetime, time, timedelta
 from sqlalchemy import create_engine, TIMESTAMP, MetaData, Column, String, Integer, DateTime, Table
 
 engine = create_engine('postgresql://sebi:beuza@v220200284142109433.supersrv.de:5432/hpapp')
@@ -161,6 +161,18 @@ def getEventNames(event_ids):
 METHODS FOR CYCLES
 """
 
+def getCurrentCycleTimestamp(cycle_id):
+    """
+    Gibt den gesetzten Timestamp vom aktuellen Cycle aus
+    """
+
+    with engine.connect() as connection:
+        result = connection.execute("select end_date_time from cycles where cycle_id=" + str(cycle_id))
+        for r in result:
+            res = r[0]
+    connection.close()
+    return res
+
 def getCurrentCycleID(event_id):
     """
     Gibt die aktuelle cycle_id eines events (event_id) zurück
@@ -182,6 +194,26 @@ def getCurrentCycleState(cycle_id):
             res = r[0]
     connection.close()
     return res
+
+def fromClosedToVoting(cycle_id):
+    cycleTimestamp = getCurrentCycleTimestamp(cycle_id)
+    # deadline am nächsten Tag um 8 Uhr.
+    # TODO: sollte irgendwann vairabel gestaltet werden.
+    deadline = datetime.combine((cycleTimestamp + timedelta(days=1)).date(), time(hour=8, minute=0))
+    diff = deadline - datetime.utcnow()
+
+    # Test falls die Differenz nicht klar ist
+    #    test_1 = datetime.combine(datetime.utcnow().date(), time(hour=10, minute=0))
+    #    test_2 = datetime.utcnow()
+    #    test_diff = test_2- test_1
+    #    print(test_1)
+    #    print(test_2)
+    #    print(test_diff.days)
+
+    if diff.days < 0:
+        return True
+    else:
+        return False
 
 def checkCycle(cycle_id, event_id):
     """
@@ -205,5 +237,22 @@ def checkCycle(cycle_id, event_id):
         table = Table('cycles', meta, Column('cycle_id', Integer, primary_key=True), Column('state', String), Column('end_date_time', DateTime), Column('event_id', Integer))
         meta.create_all()
         ins = table.insert().values(cycle_id=max_cycle_id+1, state='closed',end_date_time=datetime.utcnow(), event_id=event_id)
+        conn = engine.connect()
+        conn.execute(ins)
+
+    elif fromClosedToVoting(cycle_id=cycle_id) and currentCycleState == 'closed':
+        print('fromClosedToVoting')
+        # Berechnet maximalen Zyklus
+        with engine.connect() as connection:
+            result = connection.execute("select max(cycle_id) from cycles")
+            for r in result:
+                max_cycle_id = r[0]
+        connection.close()
+
+        # Erhöht Zyklus
+        meta = MetaData(engine)
+        table = Table('cycles', meta, Column('cycle_id', Integer, primary_key=True), Column('state', String), Column('end_date_time', DateTime), Column('event_id', Integer))
+        meta.create_all()
+        ins = table.insert().values(cycle_id=max_cycle_id+1, state='voting',end_date_time=datetime.utcnow(), event_id=event_id)
         conn = engine.connect()
         conn.execute(ins)
