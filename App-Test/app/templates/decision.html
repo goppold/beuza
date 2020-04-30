@@ -15,9 +15,10 @@
     </div>
 
     {% if ownVote==1 %}
+        <p> Sauber Burschi</p>
         <div style="text-align:center;">
         <!-- TODO Button Schlücke verteilen nur anzeigen wenn wirklich Schlücke verteilt werden-->
-        <a  type="button" class="btn btn-secondary" href="/give-slugs"> Schlücke verteilen</a>
+        <a  type="button" class="btn btn-secondary" href={{ link }}> Schlücke verteilen</a>
         </div>
     {% else %}
         <p> Du hast sauber daneben glangt. </p>

@@ -60,7 +60,7 @@ def getVote(cycle_id, user_id):
         result = connection.execute(
             "select voted_user_id from votes where user_id=" + str(user_id) + "and cycle_id=" + str(cycle_id))
         for r in result:
-            res = r
+            res = r[0]
     connection.close()
     return res
 

@@ -19,7 +19,7 @@ def setDeviceID():
     # Only for Test
     # Hier soll mal die Device_Id oder Email abgefragt werden
     global global_device_id
-    global_device_id = str(1)
+    global_device_id = str(2)
 
 def __setVote__():
     """
@@ -35,6 +35,14 @@ def __setVote__():
     checkCycle(cycle_id=cycle_id, event_id=event_id)
     print('finish')
 
+def getNumberOfSlugsToSpread(user_id, event_id):
+    # TODO muss noch mit Quote verrechnet werden
+    return 4
+
+def getNumberOfSlugsToDrink(user_id, event_id):
+    # TODO
+    return 3
+
 def getOwnVote(votes, cycle_id, ownUser_id, user_id):
     """
     Returns 1 falls vote richtig
@@ -43,6 +51,8 @@ def getOwnVote(votes, cycle_id, ownUser_id, user_id):
     print(votes)
     winning_id = getVote(cycle_id, ownUser_id)
     res = 0
+    print(user_id[votes.index(max(votes))])
+    print(winning_id)
 
     if user_id[votes.index(max(votes))] == winning_id:
         res = 1
@@ -121,12 +131,18 @@ def event(event_id):
     elif state == 'voting':  # Todo hier nur für tests closed eingegeben -> voting
         print('voting')
         if hasVoted(user_id=getUserID(device_id=global_device_id, event_id=event_id), cycle_id=cycle_id):
-            print('TODO Hier weiteres vorgehen überlegen')
             votes = countVotes(cycle_id=cycle_id, user_id=user_id)
-            # ownVote ist 1 falls richtig sonst 0
-            ownVote = getOwnVote(votes, cycle_id, getUserID(device_id=global_device_id, event_id=event_id), user_id)
-            return render_template('decision.html', amount_of_user=len(event_user), event_name=event_names,
-                                   event_users=event_user, votes=votes, ownVote=ownVote)
+            if sum(votes)==len(event_user):
+                # ownVote ist 1 falls richtig sonst 0
+                ownVote = getOwnVote(votes, cycle_id, getUserID(device_id=global_device_id, event_id=event_id), user_id)
+                link = str("/give-slugs/"+event_id)
+                return render_template('decision.html', amount_of_user=len(event_user), event_name=event_names,
+                                       event_users=event_user, votes=votes, ownVote=ownVote, link=link)
+            else:
+                checkVoteList = checkVote(cycle_id=cycle_id, user_id=user_id)
+                return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user),
+                                       event_users=event_user, checkVoteList=checkVoteList, isclosed=0)
+
         else:
             print('Hab noch nicht abgestimmt')
             return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
@@ -152,9 +168,12 @@ def result():
     return render_template('result.html')
 
 
-@app.route('/give-slugs')
-def giveSlugs():
-    return render_template('give-slugs.html')
+@app.route('/give-slugs/<event_id>', methods=['GET', 'POST'])
+def giveSlugs(event_id):
+    event_names = getEventNames(event_id)
+    numberOfSlugsToSpread = getNumberOfSlugsToSpread(event_id=event_id, user_id=getUserID(device_id=global_device_id, event_id=event_id))
+    event_users = getEventUsersName(event_id)
+    return render_template('give-slugs.html', event_name=event_names, numberOfSlugsToSpread=numberOfSlugsToSpread, event_users=event_users, amount_of_user=len(event_users))
 
 
 @app.route('/invitation')
