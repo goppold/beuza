@@ -256,3 +256,19 @@ def checkCycle(cycle_id, event_id):
         ins = table.insert().values(cycle_id=max_cycle_id+1, state='voting',end_date_time=datetime.utcnow(), event_id=event_id)
         conn = engine.connect()
         conn.execute(ins)
+
+
+"""
+METHODS FOR SLUGS
+"""
+
+def setSlugs(user_id, cycle_id, voted_user_id, amount_of_slugs):
+    """
+    Schlücke verteilen. Beschreibt hierfür die slugs Tabelle
+    Nur Einträge >0 werden berücksichtigt
+    """
+    with engine.connect() as connection:
+        connection.execute(
+            "insert into slugs (user_id, cycle_id, voted_user_id, amount_of_slugs) values (" + str(user_id) + "," + str(
+                cycle_id) + "," + str(voted_user_id) + "," + str(amount_of_slugs) + ")")
+    connection.close()

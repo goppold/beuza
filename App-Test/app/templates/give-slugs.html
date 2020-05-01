@@ -1,6 +1,6 @@
 {%  extends "base.html" %}
 {% block content %}
-<div class="container">
+<div class="container" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
     <div class="page-header">
         <h1>{{ event_name[0] }}</h1>
     </div>
@@ -18,15 +18,29 @@
                 clicks[ele.id] = 0;
             }
             document.getElementById("number" + ele.id).innerHTML = clicks[ele.id];
+            document.getElementById("voting").value = clicks;
         };
+
+        function getClicks() {
+          return clicks
+        };
+
+        function checkClicks() {
+            return "/"
+        };
+
     </script>
 
     {% for i in range(amount_of_user) %}
         <button type="button" class="btn btn-primary btn-block" onclick="onClick(this)"  id={{ i }}> {{ event_users[i] }} <a id='number{{ i }}'>0</a> </button>
     {%  endfor %}
 
-    <div style="text-align:center;">
-    <a  type="button" class="btn btn-secondary" href="/"> Speichern </a>
-    </div>
+    <form method="post" action="/">
+        <input type="hidden" id="voting" name="voting" value="">
+        <input type="hidden" id="event_id" name="event_id" value={{ event_id }}>
+        <div style="text-align:center;">
+            <a><input type="submit" class="btn btn-secondary" value="Speichern"></a>
+        </div>
+    </form>
 </div>
 {% endblock %}
