@@ -98,23 +98,25 @@ def test():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     setDeviceID()
+    flash_index = 0
     res = getEvents(device_id=global_device_id)
     event_names = getEventNames(res)
 
     try:
         __setSlugs__()
+        flash_index = "slugs"
     except:
         print('pass-1')
         pass
 
     try:
-        # TODO evtl is hier onsubmit() besser
         __setVote__()
+        flash_index = "vote"
     except:
         pass
-
+    print(flash_index)
     # TODO amount of events muss irgendwie noch umgangen werden. Kann nicht die Lösung sein
-    return render_template('index.html', amount_of_events=len(event_names), event_names=event_names, event_IDs=res)
+    return render_template('index.html', amount_of_events=len(event_names), event_names=event_names, event_IDs=res, flash_index=flash_index)
 
 
 @app.route('/decision')
