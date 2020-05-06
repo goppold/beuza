@@ -35,11 +35,11 @@ INSERT INTO cycles (state,end_date_time,event_id) VALUES ('betting',date '2020-0
 INSERT INTO cycles (state,end_date_time,event_id) VALUES ('closed',date '2020-01-02' + time '13:37:30.085337','2');
 INSERT INTO cycles (state,end_date_time,event_id) VALUES ('betting',date '2020-01-01' + time '13:37:30.085337','3');
 
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('1','1','4');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('2','1','4');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('3','1','1');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('1','3','2');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('2','3','1');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('3','3','2');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('4','3','2');
-INSERT INTO votes (user_id,cycle_id,voted_user_id) VALUES ('8','7','8');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('1','1','4');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('2','1','4');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('3','1','1');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('1','3','2');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('2','3','1');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('3','3','2');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('4','3','2');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('8','7','8');
