@@ -2,18 +2,18 @@
 {% block content %}
 <div class="container">
 
-<!-- Todo Namen noch in die DB speichern -->
+    <!-- Todo Namen noch in die DB speichern -->
 
-    <div class="form-group">
-  <label class="col-form-label" for="inputDefault">Gruppenname</label>
-  <input type="text" class="form-control" placeholder="Gruppennamen eingeben" id="inputDefault">
-</div>
+    <form method="post" action="/">
+        <p>
+            <div class="form-group">
+              <input type="text" class="form-control" placeholder="Gruppennamen eingeben" id="gruppenname" name="gruppenname">
+            </div>
 
-<!-- TODO Datepicker noch implementieren -->
-
-
-    <div style="text-align:center;">
-    <a type="button" class="btn btn-secondary" href="/"> Save</a>
-</div>
+            <div style="text-align:center;">
+                <a><input type="submit" class="btn btn-secondary" value="Speichern"></a>
+            </div>
+        </p>
+    </form>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
-DELETE FROM votes;
+DELETE FROM polls;
+DELETE FROM swigs;
 DELETE FROM cycles;
 ALTER SEQUENCE cycles_cycle_id_seq RESTART WITH 1;
 DELETE FROM users;
@@ -34,6 +35,8 @@ INSERT INTO cycles (state,end_date_time,event_id) VALUES ('betting',date '2019-0
 INSERT INTO cycles (state,end_date_time,event_id) VALUES ('betting',date '2020-01-01' + time '23:37:30.085337','2');
 INSERT INTO cycles (state,end_date_time,event_id) VALUES ('closed',date '2020-01-02' + time '13:37:30.085337','2');
 INSERT INTO cycles (state,end_date_time,event_id) VALUES ('betting',date '2020-01-01' + time '13:37:30.085337','3');
+INSERT INTO cycles (state,end_date_time,event_id) VALUES ('closed',date '2020-02-01' + time '13:37:30.085337','3');
+INSERT INTO cycles (state,end_date_time,event_id) VALUES ('voting',date '2020-03-01' + time '13:37:30.085337','3');
 
 INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('1','1','4');
 INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('2','1','4');
@@ -43,3 +46,7 @@ INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('2','3','1');
 INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('3','3','2');
 INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('4','3','2');
 INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('8','7','8');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('8','9','8');
+INSERT INTO polls (user_id,cycle_id,voted_user_id) VALUES ('7','9','8');
+
+INSERT INTO swigs (swig_id, user_id, target_user_id, fulfilled) VALUES ('1', '3', '4', TRUE);

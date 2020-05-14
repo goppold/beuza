@@ -1,10 +1,11 @@
 from flask import Flask, render_template, session, redirect, url_for, flash, request
+
 from flask_bootstrap import Bootstrap
 
 from flask_datepicker import datepicker
 
 from .db_communication import getEvents, getEventUsersName, getEventNames, getEventUserID, setVote, getCurrentCycleID, \
-    getUserID, getCurrentCycleState, hasVoted, countVotes, checkCycle, getVote, getCurrentCycleTimestamp, setSlugs
+    getUserID, getCurrentCycleState, hasVoted, countVotes, checkCycle, getVote, setSwigs, create_event
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -17,7 +18,7 @@ def setDeviceID():
     # Only for Test
     # Hier soll mal die Device_Id oder Email abgefragt werden
     global global_device_id
-    global_device_id = str(2)
+    global_device_id = str(1)
 
 
 def __setVote__():
@@ -33,29 +34,47 @@ def __setVote__():
     # Refresh Cycle if needed
     checkCycle(cycle_id=cycle_id, event_id=event_id)
 
-def __setSlugs__():
+def __setSwigs__():
     """
     Setzt Vote und checkt zugleich ob Cycle geändert werden muss
     """
-    clicks = request.form['voting']
-    event_id = request.form['event_id']
-    cycle_id = getCurrentCycleID(event_id)
+    try:
+        clicks = request.form['voting']
+        event_id = request.form['event_id']
+    except:
+        return
     user_id = getUserID(global_device_id, event_id)
     event_user_ids = getEventUserID(event_id)
     i = 0
-    for slug in clicks:
-        if slug > 0:
-            setSlugs(user_id=user_id, voted_user_id=event_user_ids(i), cycle_id=cycle_id, amount_of_slugs=slug)
-        i = i + 1
+    for swig in clicks:
+        try:
+            swig = int(swig)
+            if swig > 0:
+                setSwigs(user_id=user_id, voted_user_id=event_user_ids[i])
+            i = i + 1
+        except ValueError:
+            pass
+    # TODO: Hier muss notification für Trinker eingebaut werden
+    # TODO: Es muss noch irgendwie erkennbar sein, ob die Schlücke schon verteilt wurden
+
+def __createEvent__():
+    """
+    Erstellt neues Event
+    """
+    gruppenname = request.form['gruppenname']
+    print(gruppenname)
+    create_event(gruppenname=gruppenname, owner_device_id=global_device_id)
+
     # TODO: Hier muss notification für Trinker eingebaut werden
 
 
-def getNumberOfSlugsToSpread(user_id, event_id):
+
+def getNumberOfSwigsToSpread(user_id, event_id):
     # TODO muss noch mit Quote verrechnet werden
     return 4
 
 
-def getNumberOfSlugsToDrink(user_id, event_id):
+def getNumberOfSwigsToDrink(user_id, event_id):
     # TODO
     return 3
 
@@ -65,11 +84,8 @@ def getOwnVote(votes, cycle_id, ownUser_id, user_id):
     Returns 1 falls vote richtig
     sonst 0
     """
-    print(votes)
     winning_id = getVote(cycle_id, ownUser_id)
     res = 0
-    print(user_id[votes.index(max(votes))])
-    print(winning_id)
 
     if user_id[votes.index(max(votes))] == winning_id:
         res = 1
@@ -103,10 +119,19 @@ def index():
     event_names = getEventNames(res)
 
     try:
-        __setSlugs__()
+        __createEvent__()
+        flash_index = "create_event"
+    except:
+        print('pass-create-event')
+        pass
+
+    __setSwigs__()
+
+    try:
+        __setSwigs__()
         flash_index = "slugs"
     except:
-        print('pass-1')
+        print('pass-slugs')
         pass
 
     try:
@@ -114,6 +139,7 @@ def index():
         flash_index = "vote"
     except:
         pass
+
     print(flash_index)
     # TODO amount of events muss irgendwie noch umgangen werden. Kann nicht die Lösung sein
     return render_template('index.html', amount_of_events=len(event_names), event_names=event_names, event_IDs=res, flash_index=flash_index)
@@ -146,16 +172,13 @@ def event(event_id):
         if hasVoted(user_id=getUserID(device_id=global_device_id, event_id=event_id), cycle_id=cycle_id, ):
             isclosed = 0
             checkVoteList = checkVote(cycle_id=cycle_id, user_id=user_id)
-            print(checkVoteList)
             return render_template('decision-unclear.html', event_name=event_names, amount_of_user=len(event_user),
                                    event_users=event_user, checkVoteList=checkVoteList, isclosed=isclosed)
         else:
-            print('Hab noch nicht abgestimmt')
             return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
-                                   user_id=user_id, amount_of_user=len(event_user))
+                                   user_id=user_id, amount_of_user=len(event_user), state=state)
 
-    elif state == 'voting':  # Todo hier nur für tests closed eingegeben -> voting
-        print('voting')
+    elif state == 'voting':
         if hasVoted(user_id=getUserID(device_id=global_device_id, event_id=event_id), cycle_id=cycle_id):
             votes = countVotes(cycle_id=cycle_id, user_id=user_id)
             if sum(votes) == len(event_user):
@@ -170,9 +193,8 @@ def event(event_id):
                                        event_users=event_user, checkVoteList=checkVoteList, isclosed=0)
 
         else:
-            print('Hab noch nicht abgestimmt')
             return render_template('event.html', event_name=event_names, event_id=event_id, event_users=event_user,
-                                   user_id=user_id, amount_of_user=len(event_user))
+                                   user_id=user_id, amount_of_user=len(event_user), state=state)
 
 
     elif state == 'closed':
@@ -184,7 +206,7 @@ def event(event_id):
         print('we got a problem')
 
 
-@app.route('/create-HP')
+@app.route('/create-HP', methods=['GET', 'POST'])
 def createHP():
     return render_template('create-HP.html')
 
@@ -197,10 +219,10 @@ def result():
 @app.route('/give-slugs/<event_id>', methods=['GET', 'POST'])
 def giveSlugs(event_id):
     event_names = getEventNames(event_id)
-    numberOfSlugsToSpread = getNumberOfSlugsToSpread(event_id=event_id,
+    numberOfSwigsToSpread = getNumberOfSwigsToSpread(event_id=event_id,
                                                      user_id=getUserID(device_id=global_device_id, event_id=event_id))
     event_users = getEventUsersName(event_id)
-    return render_template('give-slugs.html', event_name=event_names, numberOfSlugsToSpread=numberOfSlugsToSpread,
+    return render_template('give-slugs.html', event_id=event_id, event_name=event_names, numberOfSlugsToSpread=numberOfSwigsToSpread,
                            event_users=event_users, amount_of_user=len(event_users))
 
 
@@ -217,4 +239,5 @@ def invitationAccepted():
 if __name__ == '__main__':
     bootstrap = Bootstrap(app)
     bootstrap.run()
+    # TODO wird glaub ich nicht mehr gebraucht
     datepicker(app)

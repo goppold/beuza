@@ -6,7 +6,11 @@
         <h1> {{ event_name[0] }}</h1>
     </div>
 <div class="active">
-    Wen wählst du beim Hackedichtpokal?
+    {% if state=='voting' %}
+        Wer hat deiner Meinung nach den Hackedichtpokal gewonnen?
+    {% else %}
+        Auf wen wettest du beim Hackedichtpokal?
+    {% endif %}
 </div>
 <form method="post" action="/">
 <p>

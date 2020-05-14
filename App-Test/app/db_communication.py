@@ -3,7 +3,7 @@ Methods for DB communication
 """
 
 from datetime import datetime, time, timedelta
-from sqlalchemy import create_engine, TIMESTAMP, MetaData, Column, String, Integer, DateTime, Table
+from sqlalchemy import create_engine, TIMESTAMP, MetaData, Column, String, Integer, DateTime, Table, Boolean
 
 engine = create_engine('postgresql://sebi:beuza@v220200284142109433.supersrv.de:5432/hpapp')
 
@@ -21,7 +21,7 @@ def countVotes(cycle_id, user_id):
     for i in range(len(user_id)):
         with engine.connect() as connection:
             result = connection.execute(
-                "select user_id from votes where cycle_id=" + str(cycle_id) + "AND voted_user_id = " + str(user_id[i]))
+                "select user_id from polls where cycle_id=" + str(cycle_id) + "AND voted_user_id = " + str(user_id[i]))
             res = 0
             for r in result:
                 res = res + 1
@@ -35,7 +35,7 @@ def hasVoted(cycle_id, user_id):
     """
     with engine.connect() as connection:
         result = connection.execute(
-            "select voted_user_id from votes where user_id=" + str(user_id) + "and cycle_id=" + str(cycle_id))
+            "select voted_user_id from polls where user_id=" + str(user_id) + "and cycle_id=" + str(cycle_id))
         res = 0
         for r in result:
             res = 1
@@ -48,7 +48,7 @@ def setVote(user_id, voted_user_id, cycle_id):
     """
     with engine.connect() as connection:
         connection.execute(
-            "insert into votes (user_id, cycle_id, voted_user_id) values (" + str(user_id) + "," + str(
+            "insert into polls (user_id, cycle_id, voted_user_id) values (" + str(user_id) + "," + str(
                 cycle_id) + "," + str(voted_user_id) + ")")
     connection.close()
 
@@ -58,7 +58,7 @@ def getVote(cycle_id, user_id):
     """
     with engine.connect() as connection:
         result = connection.execute(
-            "select voted_user_id from votes where user_id=" + str(user_id) + "and cycle_id=" + str(cycle_id))
+            "select voted_user_id from polls where user_id=" + str(user_id) + "and cycle_id=" + str(cycle_id))
         for r in result:
             res = r[0]
     connection.close()
@@ -126,6 +126,29 @@ def getEventUserID_request_form(event_ids):
     connection.close()
     return res
 
+def creat_users(event_id, owner_device_id):
+    # Berechnet maximale user_id
+    print('create_users')
+    with engine.connect() as connection:
+        result = connection.execute("select max(user_id) from users")
+        for r in result:
+            max_user_id = r[0]
+    connection.close()
+
+    new_user_id = max_user_id +1
+    print(new_user_id)
+    # Setzt neuen Admin
+    meta = MetaData(engine)
+    table = Table('users', meta, Column('user_id', Integer, primary_key=True), Column('device_id', Integer), Column('name', String), Column('is_admin', Boolean), Column('is_activ', Boolean), Column('event_id', Integer))
+    meta.create_all()
+    print(owner_device_id)
+    # TODO Hier ist noch ein Fehler beim Bool
+    ins = table.insert().values(user_id=new_user_id, device_id=owner_device_id, name='beuza', is_admin='true', is_activ='true', event_id=event_id)
+    conn = engine.connect()
+    print(event_id)
+    conn.execute(ins)
+    print('10')
+
 """
 METHODS FOR EVENTS
 """
@@ -157,9 +180,50 @@ def getEventNames(event_ids):
     connection.close()
     return res
 
+def create_event(gruppenname, owner_device_id):
+    # Berechnet maximalen Zyklus
+    with engine.connect() as connection:
+        result = connection.execute("select max(event_id) from events")
+        for r in result:
+            max_event_id = r[0]
+    connection.close()
+
+    new_event_id = max_event_id + 1
+    meta = MetaData(engine)
+    table = Table('events', meta, Column('event_id', Integer, primary_key=True), Column('name', String), Column('owner_device_id', Integer), Column('invitation_key', String))
+    #table = Table('events', meta, Column('event_id', Integer, primary_key=True), Column('name', String), Column('owner_device_id', Integer),Column('event_date_time', DateTime), Column('invitation_key', String))
+    meta.create_all()
+    #ins = table.insert().values(event_id=new_event_id, name=gruppenname, owner_device_id=owner_device_id, end_date_time=datetime.utcnow(), invitation_key="abs13")
+    ins = table.insert().values(event_id=new_event_id, name=gruppenname, owner_device_id=owner_device_id, invitation_key="abs13")
+    conn = engine.connect()
+    conn.execute(ins)
+    print('1')
+    start_cycle(new_event_id)
+    print('2')
+    creat_users(event_id=new_event_id, owner_device_id=owner_device_id)
+    print('3')
+
+
 """
 METHODS FOR CYCLES
 """
+
+def start_cycle(event_id):
+    # Berechnet maximalen Zyklus
+    with engine.connect() as connection:
+        result = connection.execute("select max(cycle_id) from cycles")
+        for r in result:
+            max_cycle_id = r[0]
+    connection.close()
+
+    # Erhöht Zyklus
+    meta = MetaData(engine)
+    table = Table('cycles', meta, Column('cycle_id', Integer, primary_key=True), Column('state', String),
+                  Column('end_date_time', DateTime), Column('event_id', Integer))
+    meta.create_all()
+    ins = table.insert().values(cycle_id=max_cycle_id + 1, state='betting', end_date_time=datetime.utcnow(), event_id=event_id)
+    conn = engine.connect()
+    conn.execute(ins)
 
 def getCurrentCycleTimestamp(cycle_id):
     """
@@ -259,16 +323,22 @@ def checkCycle(cycle_id, event_id):
 
 
 """
-METHODS FOR SLUGS
+METHODS FOR SWIGS
 """
 
-def setSlugs(user_id, cycle_id, voted_user_id, amount_of_slugs):
+def setSwigs(user_id, voted_user_id):
     """
-    Schlücke verteilen. Beschreibt hierfür die slugs Tabelle
+    Schlücke verteilen. Beschreibt hierfür die swigs Tabelle
     Nur Einträge >0 werden berücksichtigt
     """
     with engine.connect() as connection:
+        result = connection.execute("select max(swig_id) from swigs")
+        for r in result:
+            max_swig_id = r[0]
+    connection.close()
+
+    with engine.connect() as connection:
         connection.execute(
-            "insert into slugs (user_id, cycle_id, voted_user_id, amount_of_slugs) values (" + str(user_id) + "," + str(
-                cycle_id) + "," + str(voted_user_id) + "," + str(amount_of_slugs) + ")")
+            "insert into swigs (swig_id, user_id, target_user_id, fulfilled) values (" + str(max_swig_id+1) + "," + str(
+                user_id) + "," + str(voted_user_id) + "," + "FALSE" + ")")
     connection.close()
