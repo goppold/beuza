@@ -1,13 +1,14 @@
 {%  extends "base.html" %}
 {% block content %}
 <div class="container">
-
-    <!-- Todo Namen noch in die DB speichern -->
-
     <form method="post" action="/">
         <p>
             <div class="form-group">
-              <input type="text" class="form-control" placeholder="Gruppennamen eingeben" id="gruppenname" name="gruppenname">
+                <input type="text" class="form-control" placeholder="Gruppennamen eingeben" id="gruppenname" name="gruppenname" required>
+            </div>
+
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Saufname eingeben" id="user_name" name="user_name" required>
             </div>
 
             <div style="text-align:center;">

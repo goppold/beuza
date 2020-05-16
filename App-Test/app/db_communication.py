@@ -126,7 +126,7 @@ def getEventUserID_request_form(event_ids):
     connection.close()
     return res
 
-def creat_users(event_id, owner_device_id):
+def creat_users(event_id, owner_device_id, user_name):
     # Berechnet maximale user_id
     print('create_users')
     with engine.connect() as connection:
@@ -138,16 +138,12 @@ def creat_users(event_id, owner_device_id):
     new_user_id = max_user_id +1
     print(new_user_id)
     # Setzt neuen Admin
-    meta = MetaData(engine)
-    table = Table('users', meta, Column('user_id', Integer, primary_key=True), Column('device_id', Integer), Column('name', String), Column('is_admin', Boolean), Column('is_activ', Boolean), Column('event_id', Integer))
-    meta.create_all()
-    print(owner_device_id)
-    # TODO Hier ist noch ein Fehler beim Bool
-    ins = table.insert().values(user_id=new_user_id, device_id=owner_device_id, name='beuza', is_admin='true', is_activ='true', event_id=event_id)
-    conn = engine.connect()
-    print(event_id)
-    conn.execute(ins)
-    print('10')
+    with engine.connect() as connection:
+        connection.execute(
+            "insert into users (user_id, device_id, name, is_admin, is_active, event_id) values (" + str(new_user_id) + "," + str(
+                owner_device_id) + "," + str(user_name) + "," + "TRUE" + "," + "TRUE" + "," + str(event_id) + ")")
+    connection.close()
+
 
 """
 METHODS FOR EVENTS
@@ -180,7 +176,7 @@ def getEventNames(event_ids):
     connection.close()
     return res
 
-def create_event(gruppenname, owner_device_id):
+def create_event(gruppenname, owner_device_id, user_name):
     # Berechnet maximalen Zyklus
     with engine.connect() as connection:
         result = connection.execute("select max(event_id) from events")
@@ -200,7 +196,7 @@ def create_event(gruppenname, owner_device_id):
     print('1')
     start_cycle(new_event_id)
     print('2')
-    creat_users(event_id=new_event_id, owner_device_id=owner_device_id)
+    creat_users(event_id=new_event_id, owner_device_id=owner_device_id, user_name=user_name)
     print('3')
 
 

@@ -21,28 +21,38 @@ def setDeviceID():
     global_device_id = str(1)
 
 
-def __setVote__():
+def __setVote__(flash_index):
     """
     Setzt Vote und checkt zugleich ob Cycle geändert werden muss
     """
-    vote = request.form['vote']
-    event_id = request.form['event_id']
+    try:
+        vote = request.form['vote']
+        event_id = request.form['event_id']
+        flash_index = "vote"
+    except:
+        flash_index = flash_index
+        return flash_index
+
     cycle_id = getCurrentCycleID(event_id)
     user_id = getUserID(global_device_id, event_id)
     setVote(user_id=user_id, voted_user_id=vote, cycle_id=cycle_id)
 
     # Refresh Cycle if needed
     checkCycle(cycle_id=cycle_id, event_id=event_id)
+    return flash_index
 
-def __setSwigs__():
+def __setSwigs__(flash_index):
     """
     Setzt Vote und checkt zugleich ob Cycle geändert werden muss
     """
     try:
         clicks = request.form['voting']
         event_id = request.form['event_id']
+        flash_index = "slugs"
     except:
-        return
+        flash_index = flash_index
+        return flash_index
+
     user_id = getUserID(global_device_id, event_id)
     event_user_ids = getEventUserID(event_id)
     i = 0
@@ -54,16 +64,25 @@ def __setSwigs__():
             i = i + 1
         except ValueError:
             pass
+
+    return flash_index
     # TODO: Hier muss notification für Trinker eingebaut werden
     # TODO: Es muss noch irgendwie erkennbar sein, ob die Schlücke schon verteilt wurden
 
-def __createEvent__():
+def __createEvent__(flash):
     """
     Erstellt neues Event
     """
-    gruppenname = request.form['gruppenname']
-    print(gruppenname)
-    create_event(gruppenname=gruppenname, owner_device_id=global_device_id)
+    try:
+        gruppenname = request.form['gruppenname']
+        user_name = request.form['user_name']
+        flash_index = "create_event"
+    except:
+        flash_index = flash
+        return flash_index
+
+    create_event(gruppenname=gruppenname, owner_device_id=global_device_id, user_name=user_name)
+    return flash_index
 
     # TODO: Hier muss notification für Trinker eingebaut werden
 
@@ -118,27 +137,14 @@ def index():
     res = getEvents(device_id=global_device_id)
     event_names = getEventNames(res)
 
-    try:
-        __createEvent__()
-        flash_index = "create_event"
-    except:
-        print('pass-create-event')
-        pass
+    # Falls zuvor ein Event erstellt wurde
+    flash_index = __createEvent__(flash_index)
 
-    __setSwigs__()
+    # Falls die Schlücke gespeichert werden
+    flash_index = __setSwigs__(flash_index)
 
-    try:
-        __setSwigs__()
-        flash_index = "slugs"
-    except:
-        print('pass-slugs')
-        pass
-
-    try:
-        __setVote__()
-        flash_index = "vote"
-    except:
-        pass
+    # Falls gevoted wurde
+    flash_index = __setVote__(flash_index)
 
     print(flash_index)
     # TODO amount of events muss irgendwie noch umgangen werden. Kann nicht die Lösung sein
